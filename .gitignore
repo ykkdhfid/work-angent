@@ -1,0 +1,28 @@
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE 配置
+.idea/
+.vscode/
+
+# 本地配置与私人数据（不上传 GitHub）
+.env
+import_jobs.py
+
+# 日志与临时探测产物
+_sync_jobs_log.txt
+*.log
+_inspect.txt
+_weather_check.txt
+
+# 废弃草稿 / 备份文件
+界面.txt
+depstoke.md
+index.backup-*.html
+
+# 本地数据源（HTML / 跟踪表 md）
+求职中心*.html
+投递*.md
+学习计划.md

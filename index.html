@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>求职助手 Agent</title>
+    <style>
+        /* ===== 页面整体：奶白底 ===== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background: #f7f1e6;
+            color: #3d3325;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* ===== 星空点缀层：奶白底上的淡金/浅蓝小星点，克制不刺眼 ===== */
+        .stars {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                radial-gradient(2px 2px at 12% 18%, rgba(255,214,120,.85), transparent 60%),
+                radial-gradient(2px 2px at 28% 8%,  rgba(120,160,220,.7), transparent 60%),
+                radial-gradient(1.5px 1.5px at 44% 24%, rgba(255,214,120,.7), transparent 60%),
+                radial-gradient(2px 2px at 60% 12%, rgba(120,160,220,.6), transparent 60%),
+                radial-gradient(1.5px 1.5px at 72% 26%, rgba(255,214,120,.8), transparent 60%),
+                radial-gradient(2px 2px at 86% 16%, rgba(120,160,220,.65), transparent 60%),
+                radial-gradient(1.5px 1.5px at 92% 34%, rgba(255,214,120,.7), transparent 60%),
+                radial-gradient(1.5px 1.5px at 20% 40%, rgba(120,160,220,.55), transparent 60%),
+                radial-gradient(2px 2px at 52% 38%, rgba(255,214,120,.6), transparent 60%),
+                radial-gradient(1.5px 1.5px at 78% 44%, rgba(120,160,220,.55), transparent 60%);
+            animation: starTwinkle 3.6s ease-in-out infinite alternate;
+        }
+        @keyframes starTwinkle {
+            from { opacity: .55; }
+            to   { opacity: 1; }
+        }
+
+        /* 内容层压在星空之上 */
+        .wrap { position: relative; z-index: 1; }
+
+        /* ===== 头部 ===== */
+        header { text-align: center; margin-bottom: 18px; }
+        header h1 { font-size: 22px; color: #3d3325; letter-spacing: 1px; }
+        header p { margin-top: 6px; font-size: 13px; color: #6b5d48; }
+
+        /* ===== 聊天区 ===== */
+        .chat-card {
+            background: #fffdf8;
+            border: 1px solid #eadfca;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 22px;
+        }
+        .zone-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #4a3f2f;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .zone-title::before {
+            content: "";
+            width: 8px; height: 8px; border-radius: 50%;
+            background: linear-gradient(135deg, #c99a5b, #e6c894);
+        }
+        #chat {
+            border: 1px solid #eadfca;
+            background: #fbf5ea;
+            height: 320px;
+            overflow-y: scroll;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .msg { margin: 10px 0; padding: 8px 10px; border-radius: 10px; white-space: pre-wrap; line-height: 1.6; font-size: 14px; }
+        .user { background: #e3f2fd; margin-left: 18%; }
+        .bot  { background: #f1e9db; margin-right: 18%; }
+        .input-row { display: flex; gap: 8px; }
+        .input-row input {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 1px solid #d9c9a8;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 15px;
+            color: #3d3325;
+        }
+        .input-row button {
+            padding: 10px 18px;
+            min-height: 44px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #c99a5b, #e6c894);
+            color: #3d3325;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .input-row button:active { opacity: .85; }
+
+        /* ===== 直达招聘职位板块 ===== */
+        #job-zone { margin-bottom: 20px; }
+        .job-list { display: flex; flex-direction: column; gap: 12px; }
+        .job-card {
+            background: #fffdf8;
+            border: 1px solid #eadfca;
+            border-left: 5px solid #d9b37a;
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .job-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .job-co { font-size: 15px; font-weight: 700; color: #3d3325; }
+        .tag-soe {
+            font-size: 12px;
+            color: #a8732f;
+            background: #f6e7cd;
+            border-radius: 6px;
+            padding: 2px 8px;
+        }
+        .job-pos { margin-top: 4px; font-size: 14px; color: #4a3f2f; }
+        .job-meta { margin-top: 4px; font-size: 13px; color: #6b5d48; }
+        .job-desc { margin-top: 6px; font-size: 13px; color: #6b5d48; line-height: 1.6; }
+        .job-btn {
+            margin-top: 10px;
+            width: 100%;
+            min-height: 44px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #c99a5b, #e6c894);
+            color: #3d3325;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .job-btn.disabled {
+            background: #ece3d2;
+            color: #9c8f76;
+            cursor: not-allowed;
+        }
+        .job-empty, .job-tip { font-size: 13px; color: #6b5d48; line-height: 1.7; }
+    </style>
+</head>
+<body>
+    <div class="stars" aria-hidden="true"></div>
+    <div class="wrap">
+
+        <header>
+            <h1>求职助手 Agent</h1>
+            <p>问岗位、查天气、生成面试题，或点下方直达职位网页</p>
+        </header>
+
+        <!-- ===== 聊天区 ===== -->
+        <section class="chat-card">
+            <div class="zone-title">在线问答</div>
+            <div id="chat"></div>
+            <div class="input-row">
+                <input type="text" id="input" placeholder="问点什么…比如：成都有哪些P0岗位？绵阳天气怎么样？">
+                <button onclick="send()">发送</button>
+            </div>
+        </section>
+
+        <!-- ===== 直达招聘职位板块 ===== -->
+        <section id="job-zone">
+            <div class="zone-title">直达招聘职位</div>
+            <p class="job-tip">每个岗位一张卡片，点按钮直接打开对应的职位招聘网页；没有网页链接的会标为暂无链接。</p>
+            <div class="job-list" id="job-list"></div>
+        </section>
+
+    </div>
+
+    <script>
+        // ===== 聊天：把问题发给后端 Agent 接口 =====
+        function appendMsg(text, cls) {
+            const box = document.getElementById("chat");
+            const div = document.createElement("div");
+            div.className = "msg " + cls;
+            div.textContent = text;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function send() {
+            const input = document.getElementById("input");
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            appendMsg(msg, "user");
+            input.value = "";
+
+            fetch("/api/agent?message=" + encodeURIComponent(msg), { method: "POST" })
+                .then(r => r.json())
+                .then(data => appendMsg(data.reply || "（没有返回内容）", "bot"))
+                .catch(() => appendMsg("连接后端失败，请确认服务已启动。", "bot"));
+        }
+
+        // 回车发送
+        document.getElementById("input").addEventListener("keydown", function (e) {
+            if (e.key === "Enter") send();
+        });
+
+        // ===== 岗位直达：从后端拉岗位列表并渲染卡片 =====
+        function isWebUrl(url) {
+            return /^https?:\/\//i.test((url || "").trim());
+        }
+
+        function renderJob(job) {
+            const card = document.createElement("div");
+            card.className = "job-card";
+
+            const top = document.createElement("div");
+            top.className = "job-top";
+
+            const co = document.createElement("span");
+            co.className = "job-co";
+            co.textContent = job.company || "";
+            top.appendChild(co);
+
+            if (job.is_soe) {
+                const tag = document.createElement("span");
+                tag.className = "tag-soe";
+                tag.textContent = "国企/央企";
+                top.appendChild(tag);
+            }
+
+            const pos = document.createElement("div");
+            pos.className = "job-pos";
+            pos.textContent = job.position || "";
+
+            const meta = document.createElement("div");
+            meta.className = "job-meta";
+            meta.textContent = [job.city, job.salary, job.priority, job.job_type]
+                .filter(Boolean).join(" · ");
+
+            card.appendChild(top);
+            card.appendChild(pos);
+            card.appendChild(meta);
+
+            if (job.description) {
+                const desc = document.createElement("div");
+                desc.className = "job-desc";
+                desc.textContent = job.description;
+                card.appendChild(desc);
+            }
+
+            const btn = document.createElement("button");
+            const url = (job.url || "").trim();
+            if (isWebUrl(url)) {
+                btn.className = "job-btn";
+                btn.textContent = "直达职位网页";
+                btn.onclick = function () { window.open(url, "_blank"); };
+            } else {
+                btn.className = "job-btn disabled";
+                btn.textContent = "暂无链接";
+                btn.disabled = true;
+            }
+            card.appendChild(btn);
+            return card;
+        }
+
+        function loadJobs() {
+            const list = document.getElementById("job-list");
+            fetch("/api/jobs")
+                .then(r => r.json())
+                .then(jobs => {
+                    list.innerHTML = "";
+                    if (!jobs || jobs.length === 0) {
+                        const empty = document.createElement("div");
+                        empty.className = "job-empty";
+                        empty.textContent = "暂无岗位数据，可先在后端导入岗位。";
+                        list.appendChild(empty);
+                        return;
+                    }
+                    jobs.forEach(j => list.appendChild(renderJob(j)));
+                })
+                .catch(() => {
+                    list.innerHTML = "";
+                    const tip = document.createElement("div");
+                    tip.className = "job-empty";
+                    tip.textContent = "岗位列表加载失败，请确认后端服务已启动。";
+                    list.appendChild(tip);
+                });
+        }
+
+        loadJobs();
+    </script>
+</body>
+</html>
