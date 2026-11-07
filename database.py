@@ -4,8 +4,8 @@
 # Integer/String/Text/Date/Boolean：数据类型
 from sqlalchemy import create_engine, Column, Integer, String, Text, Date, Boolean
 
-# 导入declarative_base，这是所有表的基类
-from sqlalchemy.ext.declarative import declarative_base
+# 导入declarative_base，这是所有表的基类（SQLAlchemy 2.0 推荐从 orm 导入）
+from sqlalchemy.orm import declarative_base
 
 # 导入sessionmaker，用来创建和数据库对话的会话
 from sqlalchemy.orm import sessionmaker
