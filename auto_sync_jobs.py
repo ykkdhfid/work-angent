@@ -82,6 +82,23 @@ def _job_type(p):
     return "秋招正式" if (p or "").lower() == "campus" else "实习"
 
 
+# ===== 岗位方向过滤 =====
+# 白名单：岗位名或说明命中任一关键词才保留（小写匹配）；留空表示不做白名单限制
+INCLUDE_KEYWORDS = ["python", "测试", "大模型", "算法", "后端", "rpa", "数据", "agent", "ai"]
+# 黑名单：命中任一关键词直接剔除（小写匹配），比如明确不投的方向
+EXCLUDE_KEYWORDS = ["java", "安卓", "android"]
+
+
+def _match_direction(job):
+    """按白/黑名单判断岗位是否属于目标方向；不符合返回 False。"""
+    text = (job["position"] + " " + job["description"]).lower()
+    if any(k in text for k in EXCLUDE_KEYWORDS):
+        return False
+    if not INCLUDE_KEYWORDS:
+        return True
+    return any(k in text for k in INCLUDE_KEYWORDS)
+
+
 def parse_jobs(html_text):
     """把 HTML 里的 jobs 数组解析成岗位字典列表。"""
     start = html_text.find("const jobs = [")
@@ -141,6 +158,12 @@ def sync_jobs():
         return
 
     jobs = parse_jobs(html_text)
+    # 按目标方向过滤：不符方向的岗位不入库
+    before = len(jobs)
+    jobs = [j for j in jobs if _match_direction(j)]
+    filtered = before - len(jobs)
+    if filtered:
+        append_log("FILTER 方向不符剔除 %d 个岗位" % filtered)
     if not jobs:
         append_log("SKIP 未解析到有效岗位，本次未改动数据库")
         print("未解析到岗位，跳过，不清库")
