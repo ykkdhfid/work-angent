@@ -59,3 +59,60 @@ python auto_sync_jobs.py
 ```
 
 脚本读取 `JOB_CENTER_DIR` 目录下最新一份岗位清单 HTML，同步到 `jobs` 表；数据源缺失、过期或解析不到岗位时跳过本次，不清空数据库。巡检日志写在脚本同目录的 `_sync_jobs_log.txt`。
+
+## 如何巡检其他专业岗位
+
+### 先了解现状
+
+- 本工程默认**不按专业方向过滤**：巡检脚本把数据源 HTML 里解析到的岗位全量入库；后端查询只按城市、优先级、是否国企筛选。
+- 岗位方向实际由**数据源清单**决定：巡检读的是 `JOB_CENTER_DIR` 目录下最新一份岗位 HTML，HTML 里有什么就存什么。
+- 想换方向，按下面三层改，改动量从小到大。
+
+### 第 1 层：换数据源清单（不改代码，最常用）
+
+1. 把新方向的岗位清单 HTML 放到 `.env` 里 `JOB_CENTER_DIR` 指向的目录。
+2. 文件名以「求职中心」开头（脚本按 `求职中心*.html` 匹配最新一份）；要换前缀，同步改 `auto_sync_jobs.py` 里 `_find_center_html` 的 glob。
+3. HTML 里岗位沿用 `const jobs = [{...}]` 结构，字段：`co` 公司、`role` 岗位名、`city` 城市、`sal` 薪资、`p` 优先级、`reason` 说明、`url` 链接。
+4. 运行 `python auto_sync_jobs.py` 同步到数据库。
+
+### 第 2 层：巡检时按方向过滤（白名单 / 黑名单）
+
+在 `auto_sync_jobs.py` 顶部加关键词，再在解析后过滤，不符合方向的岗位不入库：
+
+```python
+# 目标方向关键词（白名单）：岗位名或说明命中任一才保留
+INCLUDE_KEYWORDS = ["Python", "测试", "AI", "大模型", "算法", "后端", "RPA"]
+# 排除方向关键词（黑名单）：命中任一直接丢弃
+EXCLUDE_KEYWORDS = ["Java", "安卓", "前端"]
+
+def _match_direction(job):
+    text = (job["position"] + " " + job["description"]).lower()
+    if any(k.lower() in text for k in EXCLUDE_KEYWORDS):
+        return False
+    return any(k.lower() in text for k in INCLUDE_KEYWORDS)
+```
+
+在 `sync_jobs()` 里 `jobs = parse_jobs(html_text)` 之后加一行：
+
+```python
+jobs = [j for j in jobs if _match_direction(j)]
+```
+
+> 白名单是「命中才留」。如果只想排除个别方向、其余都留，就把 `INCLUDE_KEYWORDS` 留空、只配黑名单。
+
+### 第 3 层：后端查询和 Agent 提示词配合
+
+- `search_jobs`（`main.py`）可再加一个关键词参数，按岗位名或说明过滤。需要先从 `sqlalchemy` 导入 `or_`：
+
+```python
+if keyword:
+    query = query.filter(or_(Job.position.like(f"%{keyword}%"),
+                             Job.description.like(f"%{keyword}%")))
+```
+
+- Agent 想固定只聊目标方向，可在 `/api/agent` 的 `messages` 最前面加一条 `system` 消息，写明目标方向和排除方向（当前代码只有 user 消息）。
+
+### 改完生效
+
+- 巡检脚本是离线手动跑，改完直接 `python auto_sync_jobs.py`。
+- 后端代码（`main.py`）改完要重启 uvicorn 才生效。
